@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7623155519698824043}
   - component: {fileID: 7623155519698824042}
+  - component: {fileID: 7623155519698824044}
   - component: {fileID: 2046363844542653688}
   - component: {fileID: 6443617222255276377}
   m_Layer: 0
@@ -47,15 +48,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _camera: {fileID: 0}
-  _fornt: 119
-  _back: 115
-  _left: 97
-  _right: 100
-  _up: 114
-  _down: 102
-  _speedUp: 304
-  _AxesNameHorizontal: Mouse X
-  _AxesNameVertical: Mouse Y
   _isMoveSmooth: 0
   _isRotateSmooth: 0
   _accelerationForMove: 4.5
@@ -80,12 +72,32 @@ MonoBehaviour:
   _target: {fileID: 7623155519698824043}
   _rigidBody: {fileID: 6443617222255276377}
   _collider: {fileID: 2046363844542653688}
-  _moveDirSelf: {x: 0, y: 0, z: 0}
-  _moveDirWorld: {x: 0, y: 0, z: 0}
   _moveDir: {x: 0, y: 0, z: 0}
   _rotateDirHorizontal: 0
   _rotateDirVertical: 0
   _isShifting: 0
+  _isSpeedUp: 0
+--- !u!114 &7623155519698824044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7623155519698824041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60071b0d50214dcbbd0e367667978f1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _front: 119
+  _back: 115
+  _left: 97
+  _right: 100
+  _up: 114
+  _down: 102
+  _speedUp: 304
+  _axesNameHorizontal: Mouse X
+  _axesNameVertical: Mouse Y
 --- !u!135 &2046363844542653688
 SphereCollider:
   m_ObjectHideFlags: 0

@@ -12,17 +12,6 @@ namespace WPZ0325.EasyFirstCameraController
         [Header("需要控制的相机")]
         [SerializeField] private Transform _camera;
 
-        [Header("控制键位设置")]
-        [SerializeField, FormerlySerializedAs("_fornt")] private KeyCode _front = KeyCode.W;
-        [SerializeField] private KeyCode _back      =KeyCode.S;
-        [SerializeField] private KeyCode _left      =KeyCode.A;
-        [SerializeField] private KeyCode _right     =KeyCode.D;
-        [SerializeField] private KeyCode _up        =KeyCode.R;
-        [SerializeField] private KeyCode _down      =KeyCode.F;
-        [SerializeField] private KeyCode _speedUp   =KeyCode.LeftShift;
-        [SerializeField] private string _AxesNameHorizontal = "Mouse X";
-        [SerializeField] private string _AxesNameVertical = "Mouse Y";
-
         [Header("控制参数设置")]
         [SerializeField] bool _isMoveSmooth = false;
         [SerializeField] bool _isRotateSmooth = false;
@@ -46,43 +35,35 @@ namespace WPZ0325.EasyFirstCameraController
         [SerializeField] Transform _target;
         [SerializeField] Rigidbody _rigidBody;
         [SerializeField] SphereCollider _collider;
-        [SerializeField] Vector3 _moveDirSelf;
-        [SerializeField] Vector3 _moveDirWorld;
         [SerializeField] Vector3 _moveDir;
         [SerializeField] float _rotateDirHorizontal;
         [SerializeField] float _rotateDirVertical;
         [SerializeField] bool _isShifting = false;
+        [SerializeField] bool _isSpeedUp = false;
 
     #endregion
 
-    #region 【输入处理】Input Handling
+    #region 【公开控制方法】Public Control API
 
-        void RespondToInput()
+        /// <summary>
+        /// 当前控制目标（相机跟随的载体）
+        /// </summary>
+        public Transform Target => _target;
+
+        /// <summary>
+        /// 设置移动方向（世界空间，需归一化）与是否加速
+        /// </summary>
+        /// <param name="moveDir">世界空间移动方向，传入 Vector3.zero 表示停止移动</param>
+        /// <param name="isSpeedUp">是否启用加速（乘以 _speedUpRate）</param>
+        public void SetMoveDirection(Vector3 moveDir, bool isSpeedUp)
         {
-            _moveDirSelf = Vector3.zero;
-            _moveDirWorld = Vector3.zero;
-            _rotateDirHorizontal = 0.0f;
-            _rotateDirVertical = 0.0f;
-            _moveDirSelf += Input.GetKey(_front) ? Vector3.forward : Vector3.zero;
-            _moveDirSelf += Input.GetKey(_back) ? Vector3.back : Vector3.zero;
-            _moveDirSelf += Input.GetKey(_left) ? Vector3.left : Vector3.zero;
-            _moveDirSelf += Input.GetKey(_right) ? Vector3.right : Vector3.zero;
-            _moveDirSelf = _moveDirSelf.normalized;
-            _moveDirWorld += Input.GetKey(_up) ? Vector3.up : Vector3.zero;
-            _moveDirWorld += Input.GetKey(_down) ? Vector3.down : Vector3.zero;
-            _moveDirWorld = _moveDirWorld.normalized;
+            _moveDir = moveDir;
+            _isSpeedUp = isSpeedUp;
 
-            _rotateDirHorizontal = Input.GetAxisRaw(_AxesNameHorizontal);
-            _rotateDirVertical = (-1) * Input.GetAxisRaw(_AxesNameVertical);
-
-            _moveDir = _moveDirWorld + _target.TransformDirection(_moveDirSelf);
-            _moveDir = _moveDir.normalized;
-
-            if (_moveDirSelf.magnitude >= float.Epsilon || _moveDirWorld.magnitude > float.Epsilon)
+            if (_moveDir.magnitude >= float.Epsilon)
             {
                 if (_isShifting == false)
                 {
-                    //Debug.Log("OnShiftStart");
                     MyDebug(nameof(OnShiftStart));
                     OnShiftStart?.Invoke();
                     _isShifting = true;
@@ -92,7 +73,6 @@ namespace WPZ0325.EasyFirstCameraController
             {
                 if (_isShifting == true)
                 {
-                    //Debug.Log("OnShiftEnd");
                     MyDebug(nameof(OnShiftEnd));
                     OnShiftEnd?.Invoke();
                     _isShifting = false;
@@ -101,11 +81,20 @@ namespace WPZ0325.EasyFirstCameraController
 
             if (_isShifting)
             {
-                //Debug.Log("OnShifting");
                 MyDebug(nameof(OnShifting));
                 OnShifting?.Invoke(_target);
             }
+        }
 
+        /// <summary>
+        /// 设置旋转方向（水平/垂直角速度系数）
+        /// </summary>
+        /// <param name="horizontal">水平旋转系数，正值向右转</param>
+        /// <param name="vertical">垂直旋转系数，正值向上看</param>
+        public void SetRotateDirection(float horizontal, float vertical)
+        {
+            _rotateDirHorizontal = horizontal;
+            _rotateDirVertical = vertical;
         }
 
     #endregion
@@ -118,7 +107,7 @@ namespace WPZ0325.EasyFirstCameraController
         /// <param name="timeStep"></param>
         void UpdateLocation(float timeStep)
         {
-            float moveSpeed = _moveSpeed * (Input.GetKey(_speedUp) ? _speedUpRate : 1.0f);
+            float moveSpeed = _moveSpeed * (_isSpeedUp ? _speedUpRate : 1.0f);
 
             if (_isEnableCollider)
             {
@@ -267,21 +256,10 @@ namespace WPZ0325.EasyFirstCameraController
             }
             _collider.enabled = _isEnableCollider;
             _collider.radius = _colliderSize;
-            if (Input.GetMouseButton(1))
+            UpdateView(Time.unscaledDeltaTime);
+            if (!_isEnableCollider)
             {
-                RespondToInput();
-                UpdateView(Time.unscaledDeltaTime);
-                if (!_isEnableCollider)
-                {
-                    UpdateLocation(Time.unscaledDeltaTime);
-                }
-            }
-            else
-            {
-                _moveDirSelf = Vector3.zero;
-                _moveDirWorld = Vector3.zero;
-                _rotateDirHorizontal = 0.0f;
-                _rotateDirVertical = 0.0f;
+                UpdateLocation(Time.unscaledDeltaTime);
             }
             //防止刚体处于漂游模式
             _rigidBody.velocity = Vector3.zero;
@@ -303,7 +281,7 @@ namespace WPZ0325.EasyFirstCameraController
             {
                 return;
             }
-            if (Input.GetMouseButton(1) && _isEnableCollider)
+            if (_isEnableCollider)
             {
                 UpdateLocation(Time.fixedUnscaledDeltaTime);
             }
