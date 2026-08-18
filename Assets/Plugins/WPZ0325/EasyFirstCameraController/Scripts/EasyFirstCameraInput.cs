@@ -24,6 +24,18 @@ namespace WPZ0325.EasyFirstCameraController
         [SerializeField] private string _axesNameHorizontal = "Mouse X";
         [SerializeField] private string _axesNameVertical = "Mouse Y";
 
+    #if ENABLE_INPUT_SYSTEM
+        /// <summary>
+        /// 原因找到了：旧输入系统的 sensitivity 缩放。
+        /// 旧分支：Input.GetAxisRaw("Mouse X") 返回的值受 Input Manager 中 "Mouse X" 轴默认 Sensitivity: 0.1 缩放 → 约 delta × 0.1
+        /// 新分支：Mouse.current.delta.x 返回原始像素增量，无缩放 → delta × 1.0
+        /// 差了 10 倍，所以新模式下旋转明显更快（移动本身无差异，是旋转让整体观感变快）。修复：新分支加一个灵敏度缩放字段，默认 0.1 对齐旧默认值：
+        /// </summary>
+        [Header("新输入系统参数")]
+        [Tooltip("鼠标灵敏度缩放，默认 0.1 对齐旧输入管理器 Mouse 轴默认 Sensitivity")]
+        [SerializeField] private float _mouseSensitivity = 0.1f;
+    #endif
+
     #endregion
 
         private EasyFirstCameraControllerType _controller;
@@ -111,21 +123,23 @@ namespace WPZ0325.EasyFirstCameraController
                 case KeyCode.PageUp: return Key.PageUp;
                 case KeyCode.PageDown: return Key.PageDown;
                 // 小键盘
-                case KeyCode.Num0: return Key.Numpad0;
-                case KeyCode.Num1: return Key.Numpad1;
-                case KeyCode.Num2: return Key.Numpad2;
-                case KeyCode.Num3: return Key.Numpad3;
-                case KeyCode.Num4: return Key.Numpad4;
-                case KeyCode.Num5: return Key.Numpad5;
-                case KeyCode.Num6: return Key.Numpad6;
-                case KeyCode.Num7: return Key.Numpad7;
-                case KeyCode.Num8: return Key.Numpad8;
-                case KeyCode.Num9: return Key.Numpad9;
-                case KeyCode.Multiply: return Key.NumpadMultiply;
-                case KeyCode.Add: return Key.NumpadPlus;
-                case KeyCode.Subtract: return Key.NumpadMinus;
-                case KeyCode.Decimal: return Key.NumpadPeriod;
-                case KeyCode.Divide: return Key.NumpadDivide;
+                case KeyCode.Keypad0: return Key.Numpad0;
+                case KeyCode.Keypad1: return Key.Numpad1;
+                case KeyCode.Keypad2: return Key.Numpad2;
+                case KeyCode.Keypad3: return Key.Numpad3;
+                case KeyCode.Keypad4: return Key.Numpad4;
+                case KeyCode.Keypad5: return Key.Numpad5;
+                case KeyCode.Keypad6: return Key.Numpad6;
+                case KeyCode.Keypad7: return Key.Numpad7;
+                case KeyCode.Keypad8: return Key.Numpad8;
+                case KeyCode.Keypad9: return Key.Numpad9;
+                case KeyCode.KeypadPeriod: return Key.NumpadPeriod;
+                case KeyCode.KeypadDivide: return Key.NumpadDivide;
+                case KeyCode.KeypadMultiply: return Key.NumpadMultiply;
+                case KeyCode.KeypadMinus: return Key.NumpadMinus;
+                case KeyCode.KeypadPlus: return Key.NumpadPlus;
+                case KeyCode.KeypadEnter: return Key.NumpadEnter;
+                case KeyCode.KeypadEquals: return Key.NumpadEquals;
                 // 功能键 F1-F15
                 case KeyCode.F1: return Key.F1;
                 case KeyCode.F2: return Key.F2;
@@ -139,9 +153,6 @@ namespace WPZ0325.EasyFirstCameraController
                 case KeyCode.F10: return Key.F10;
                 case KeyCode.F11: return Key.F11;
                 case KeyCode.F12: return Key.F12;
-                case KeyCode.F13: return Key.F13;
-                case KeyCode.F14: return Key.F14;
-                case KeyCode.F15: return Key.F15;
                 // 修饰键
                 case KeyCode.RightShift: return Key.RightShift;
                 case KeyCode.LeftShift: return Key.LeftShift;
@@ -150,16 +161,10 @@ namespace WPZ0325.EasyFirstCameraController
                 case KeyCode.RightAlt: return Key.RightAlt;
                 case KeyCode.LeftAlt: return Key.LeftAlt;
                 case KeyCode.RightCommand: return Key.RightMeta;
-                case KeyCode.RightApple: return Key.RightMeta;
                 case KeyCode.LeftCommand: return Key.LeftMeta;
-                case KeyCode.LeftApple: return Key.LeftMeta;
                 case KeyCode.LeftWindows: return Key.LeftWindows;
                 case KeyCode.RightWindows: return Key.RightWindows;
                 case KeyCode.AltGr: return Key.RightAlt;
-                // 锁定键
-                case KeyCode.CapsLock: return Key.CapsLock;
-                case KeyCode.Numlock: return Key.NumLock;
-                case KeyCode.ScrollLock: return Key.ScrollLock;
                 // 无对应按键（组合符号、鼠标、手柄等）
                 default: return Key.None;
             }
@@ -189,8 +194,8 @@ namespace WPZ0325.EasyFirstCameraController
                     moveDirWorld += keyboard[ToKey(_down)].isPressed ? Vector3.down : Vector3.zero;
                     moveDirWorld = moveDirWorld.normalized;
                 }
-                rotateDirHorizontal = mouse.delta.x.ReadValue();
-                rotateDirVertical = mouse.delta.y.ReadValue();
+                rotateDirHorizontal = mouse.delta.x.ReadValue() * _mouseSensitivity;
+                rotateDirVertical = (-1) * mouse.delta.y.ReadValue() * _mouseSensitivity;
             }
             Vector3 moveDir = moveDirWorld + _controller.Target.TransformDirection(moveDirSelf);
             bool isSpeedUp = isShiftingInput && keyboard != null && keyboard[ToKey(_speedUp)].isPressed;
