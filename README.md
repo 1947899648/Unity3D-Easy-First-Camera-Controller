@@ -2,6 +2,8 @@
 
 一款简单易用的 Unity 第一人称相机控制器插件，开箱即用：拖入预制体、指定相机即可获得带视角俯仰限制、碰撞检测与平滑过渡的完整第一人称相机控制体验。
 
+> ⚠️ <span style="color:red"><strong>警告：</strong>本插件实现的是<strong>第一人称相机控制（上帝视角）</strong>，而非第一人称人物控制，请勿混淆。</span>
+
 ## 演示
 
 | 运行总览 | EasyFirstCameraController 属性面板 | EasyFirstCameraInput 属性面板 |
